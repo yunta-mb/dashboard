@@ -45,4 +45,6 @@ end
 # gem 'debugger', group: [:development, :test]
 
 gem 'faye'
+gem 'pg'
+gem 'railroady', group: :development
 
