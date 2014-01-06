@@ -47,4 +47,10 @@ end
 gem 'faye'
 gem 'pg'
 gem 'railroady', group: :development
-
+gem 'skim'
+gem 'slim'
+#gem 'rails-backbone'
+gem 'marionette-rails'
+gem 'puma'
+gem 'd3-rails'
+gem 'awesome_print'

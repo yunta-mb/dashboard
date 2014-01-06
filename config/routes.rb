@@ -3,7 +3,12 @@ Dashboard::Application.routes.draw do
   # See how all your routes lay out with "rake routes".
 
   # You can have the root of your site routed with "root"
-  # root 'welcome#index'
+
+	root 'application#index'
+	resources :reports, only: [:index] do
+		resources :versions, only: [:show, :create], controller: "report_versions"
+	end
+
 
   # Example of regular route:
   #   get 'products/:id' => 'catalog#view'

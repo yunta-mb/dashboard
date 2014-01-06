@@ -12,5 +12,9 @@
 //
 //= require jquery
 //= require jquery_ujs
-//= require turbolinks
+//= require underscore-min
+//= require backbone-min
+//= require backbone.marionette
+//= require d3
 //= require_tree .
+//= require_tree ../templates

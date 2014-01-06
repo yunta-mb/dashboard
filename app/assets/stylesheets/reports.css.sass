@@ -1,0 +1,114 @@
+// Place all the styles related to the submissions controller here.
+// They will automatically be included in application.css.
+// You can use Sass (SCSS) here: http://sass-lang.com/
+
+html, body
+  height: 100%
+  margin: 0px
+  padding: 0px
+  font-family: Verdana,Sans-Serif
+  font-size: 15px
+
+
+#list_region_wrapper  
+  position: fixed
+  float: left
+  height: 100%
+  overflow-y: scroll
+  direction: rtl
+  padding-left: 0.5em
+  background-color: #FFFFFF
+  width: 25.5em
+
+#list_region_wrapper.list_folded
+  width: 1.5em
+  overflow-y: hidden
+
+#list_region
+  direction: ltr
+
+#list_region.list_folded
+  display: none
+
+
+#report_region_wrapper
+  margin-left: 26.5em
+  float: left
+
+#report_region_wrapper.list_folded
+  margin-left: 1.5em
+  
+#report_region
+  display: table
+//  background-color: #EEEEEE
+
+
+#list_switch_link:hover #list_switch.list_unfolded, #list_switch_link #list_switch.list_folded
+  background-color: #EEEEEE
+  color: black
+  .list_switch_hide
+    display: block
+    
+#list_switch_link #list_switch.list_unfolded
+  .list_switch_hide
+    display: none
+      
+#list_region_wrapper #list_switch
+  direction: ltr
+  position: fixed
+  height: 100%
+  width: 1.5em
+  left: 25em
+  top: 0
+  .list_switch_hide
+    position: relative
+    top: 40%
+    font-size: 2em
+
+#list_region_wrapper #list_switch.list_folded
+  left: 0em
+
+
+.focused_report
+  background-color: #EEEEEE
+  
+
+
+
+
+.no_decoration
+  text-decoration: none
+
+td.lalign
+  text-align: left
+
+.key
+  font-weight: bold
+
+ul
+  list-style: none
+  padding-left: 10px
+  padding-top: 0px
+
+ul.styled
+  list-style: disc
+  padding-left: 20px
+
+li
+  padding-top: 0.2em
+  padding-bottom: 0.2em
+
+
+.small
+  font-size: small
+
+.black
+  color: black
+
+pre
+  margin-bottom: 0px
+
+.hidden
+  display: none
+
+
