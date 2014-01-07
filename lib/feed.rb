@@ -2,6 +2,7 @@ require './config/environment.rb'
 
 require 'faye'
 require 'eventmachine'
+require './lib/config.rb'
 
 def reports
 	Report.all.map { |report|
@@ -10,7 +11,7 @@ def reports
 end
 
 EM.run {
-	faye = Faye::Client.new("http://localhost:3000/live")
+	faye = Faye::Client.new(SERVER_URL)
 
 	faye.subscribe("/requests") { |message|
 		p "got reports req", message, "/client/"+message["client"]+"/reports"
@@ -23,7 +24,7 @@ EM.run {
 		when "report"
 			report = Report.find(requesting[1])
 			report_version = report.latest_version
-			faye.publish(response_channel, { data: report_version.data, projector: report_version.projector, version: report_version.version })
+			faye.publish(response_channel, { data: report_version.data, projector: report_version.projector, version: report_version.version, name: report.name })
 		end
 	}
 

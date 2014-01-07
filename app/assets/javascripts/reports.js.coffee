@@ -43,6 +43,7 @@ class ReportView extends Backbone.Marionette.ItemView
                         console.log("done")
                         @projector.update(@model.attributes.data.metadata.data)
                         $("#report_version").html(@model.attributes.data.current_version)
+                        $("#report_title").html(@model.attributes.data.metadata.name)
 
 
 #----------------------------------- report list
@@ -152,6 +153,8 @@ class FayeCollection extends Backbone.Collection
                                         @metadata.data = update.data
                                 if update.projector
                                         @metadata.projector = update.projector
+                                if update.name
+                                        @metadata.name = update.name
                                 @current_version = update.version
                         else
                                 console.log("we lost some updates, requesting full set")

@@ -1,5 +1,7 @@
 #report_details
-  | report version: 
+  span#report_title
+    | &nbsp;
+  |  : 
   span#report_version
     | &nbsp;
 #report_body
