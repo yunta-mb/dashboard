@@ -15,6 +15,7 @@
 //= require underscore-min
 //= require backbone-min
 //= require backbone.marionette
+//= require colorbrewer
 //= require d3
 //= require_tree .
 //= require_tree ../templates
