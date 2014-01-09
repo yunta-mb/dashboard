@@ -114,7 +114,7 @@ class FayeCollection extends Backbone.Collection
 
                 console.log("Listening for list updates: ",@faye_path+"/client/"+window.client_id)
 
-                full_feed = window.faye.subscribe("/client/"+window.client_id+path, (message) =>
+                @full_feed = window.faye.subscribe("/client/"+window.client_id+path, (message) =>
                         console.log("full data", message)
                         return if @current_version and message.version <= @current_version
                         @set(message.data)
@@ -123,13 +123,13 @@ class FayeCollection extends Backbone.Collection
                         @apply_updates()
                         )
 
-                incremental_feed = window.faye.subscribe(path, (message) =>
+                @incremental_feed = window.faye.subscribe(path, (message) =>
                         console.log("incremental data")
                         @update_queue.push(message)
                         @apply_updates()
                         )
 
-                window.setInterval((() =>
+                @refetch_timer = window.setInterval((() =>
                         if (! @current_version) and ( (! @last_full_request_timestamp) or ((new Date().getTime()) - @last_full_request_timestamp > 10000))
                                 console.log("not getting full list? re-asking")
                                 @request_full()
@@ -162,6 +162,10 @@ class FayeCollection extends Backbone.Collection
                                 @request_full()
                 @trigger("updated")
 
+        die_mf_die: () ->
+                @full_feed.cancel()
+                @incremental_feed.cancel()
+                window.clearInterval(@refetch_timer)
 
 #----------------------------------- controllers
 
@@ -199,6 +203,9 @@ class ReportController extends Marionette.Controller
         navigate: (old_state,new_state,changed) ->
                 console.log("rep navigate")
                 if _.intersection(changed, ["report"]).length > 0
+                        if @reportView
+                                @report.die_mf_die()
+                                @reportView.close()
                         if new_state.report and new_state.report.length > 0
                                 $(".report_row").removeClass("focused_report")
                                 @report = new FayeCollection
