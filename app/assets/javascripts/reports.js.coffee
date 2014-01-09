@@ -37,9 +37,10 @@ class ReportView extends Backbone.Marionette.ItemView
 
         updateView: () =>
                 if @model.attributes.data.metadata?
+                        @projector = {} if not @projector?
                         console.log("evaluating projector")
                         eval(@model.attributes.data.metadata.projector)
-                        @projector = new @Projector()
+                        $.extend(@projector, new @Projector())
                         console.log("done")
                         @projector.update(@model.attributes.data.metadata.data)
                         $("#report_version").html(@model.attributes.data.current_version)

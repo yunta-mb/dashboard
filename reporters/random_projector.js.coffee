@@ -1,14 +1,11 @@
 class @Projector
         update: (data) ->
-                if $("#timeline").length > 0
-                        svg = d3.select("#timeline")
-                        circle_group = svg.select("#main")
-                else
-                        svg = d3.select("#report_body").append("svg").attr("id","timeline").attr("width", 500).attr("height", 400)
-                        circle_group = svg.append("g").attr("id","main")
+                if not @svg?
+                        @svg = d3.select("#report_body").append("svg").attr("id","timeline").attr("width", 500).attr("height", 400)
+                        @circle_group = @svg.append("g").attr("id","main")
 
                 console.log(data)
-                dots = circle_group.selectAll("circle").data(data, (d)->d.id)
+                dots = @circle_group.selectAll("circle").data(data, (d)->d.id)
 
                 dots.enter()
                         .append("circle")
