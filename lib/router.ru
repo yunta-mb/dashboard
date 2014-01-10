@@ -6,12 +6,12 @@ require 'thin'
 class FayeLog
 
 	def incoming(message, callback)
-		puts "<"
+		puts Time.new.strftime("%Y-%m-%d %H:%M:%S") + " <"
 		callback.call(message)
 	end
 
 	def outgoing(message, callback)
-		puts ">"
+		puts Time.new.strftime("%Y-%m-%d %H:%M:%S") + " >"
 		callback.call(message)
 	end
 
