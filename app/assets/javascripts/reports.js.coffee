@@ -214,7 +214,7 @@ class ReportController extends Marionette.Controller
                                 @reportView = new ReportView(model: @reportDescription)
                                 application.report_region.show(@reportView)
                                 @listenTo(@report, "updated", @reportView.updateView)
-                                console.log("x")
+#                                console.log("x")
 #                                application.list_region.show(@reportView)
                         else
                                 application.report_region.close()
@@ -343,7 +343,9 @@ $(document).ready( () ->
         for i in [0..15]
                 window.client_id += Math.floor(Math.random()*16).toString(16)
 
-        window.faye = new Faye.Client('/live')
+        faye_url = '/live'
+        faye_url = 'http://localhost:3001/live' if document.location.hostname == "localhost"
+        window.faye = new Faye.Client(faye_url)
         window.faye.subscribe("/ping", (message) -> console.log("ping"))
 
         window.listController = new ListController(api: window.API)
