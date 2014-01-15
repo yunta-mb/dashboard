@@ -199,6 +199,7 @@ class ReportController extends Marionette.Controller
         initialize: (options) ->
                 @api = options.api
                 @listenTo(@api, "navigate", @navigate)
+                $(window).resize(@resize)
 
         navigate: (old_state,new_state,changed) ->
                 console.log("rep navigate")
@@ -221,6 +222,8 @@ class ReportController extends Marionette.Controller
                 else
                         @submissionDetailsView.updateView() if @submissionDetailsView?
 
+        resize: () =>
+                @reportView.updateView() if @reportView?
 
 
 class ListFolderController extends Marionette.Controller
