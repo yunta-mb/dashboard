@@ -241,6 +241,7 @@ class ListFolderController extends Marionette.Controller
                         els = $(".list_folded")
                         els.removeClass("list_folded")
                         els.addClass("list_unfolded")
+                window.reportController.resize() if _.intersection(changed, ["list_hidden"]).length > 0
                 $("#list_switch_link").attr("href", "#"+@api.compose(list_hidden: (not @api.current_state.list_hidden)))
 
 
