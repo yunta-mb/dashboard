@@ -115,7 +115,7 @@ class FayeCollection extends Backbone.Collection
                 console.log("Listening for list updates: ",@faye_path+"/client/"+window.client_id)
 
                 @full_feed = window.faye.subscribe("/client/"+window.client_id+path, (message) =>
-                        console.log("full data", message)
+#                        console.log("full data", message)
                         return if @current_version and message.version <= @current_version
                         @set(message.data)
                         @current_version = message.version
@@ -124,7 +124,7 @@ class FayeCollection extends Backbone.Collection
                         )
 
                 @incremental_feed = window.faye.subscribe(path, (message) =>
-                        console.log("incremental data")
+ #                       console.log("incremental data")
                         @update_queue.push(message)
                         @apply_updates()
                         )
@@ -176,11 +176,9 @@ class ListController extends Marionette.Controller
                 @listenTo(@api, "navigate", @navigate)
                 @reports = new FayeCollection
                 @reports.listen("/reports")
-                console.log("x")
                 @reportListView = new ReportListView
                 @reportListView.collection = @reports
                 application.list_region.show(@reportListView)
-                console.log("x")
                 @listenTo(@reports, "updated", @reportListView.updateView)
                 # d3 - define behaviour
                 # faye - start updates
@@ -350,7 +348,20 @@ $(document).ready( () ->
         faye_url = '/live'
         faye_url = 'http://localhost:3001/live' if document.location.hostname == "localhost"
         window.faye = new Faye.Client(faye_url)
-        window.faye.subscribe("/ping", (message) -> console.log("ping"))
+
+        window.pings_missed = 0
+        window.faye.subscribe("/ping", (message) =>
+                console.log("ping")
+                if window.pings_missed > 10
+                        $(".ping-fail-overlay").css("display":"none")
+                window.pings_missed = 0
+                )
+        window.ping_check_interval = window.setInterval( (() =>
+                window.pings_missed += 1
+                if window.pings_missed > 10
+                        $(".ping-fail-overlay").css("display":"block")
+                ), 1000)
+
 
         window.listController = new ListController(api: window.API)
         window.reportController = new ReportController(api: window.API)
