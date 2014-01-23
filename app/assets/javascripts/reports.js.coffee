@@ -354,15 +354,12 @@ $(document).ready( () ->
                 console.log("ping")
                 if window.pings_missed > 10
                         $(".ping-fail-overlay").css("display":"none")
-                        $("body").css("overflow":"visible")
                 window.pings_missed = 0
                 )
         window.ping_check_interval = window.setInterval( (() =>
                 window.pings_missed += 1
                 if window.pings_missed > 10
                         $(".ping-fail-overlay").css("display":"block")
-                        $("body").css("overflow":"hidden")
-                        window.scrollTo(0,0)
                 ), 1000)
 
 
