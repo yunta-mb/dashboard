@@ -5,7 +5,7 @@ require 'eventmachine'
 require './lib/config.rb'
 
 def reports
-	Report.all.map { |report|
+	Report.all.order("priority NULLS LAST, name").map { |report|
 		{ id: report.id, name: report.name }
 	}
 end
