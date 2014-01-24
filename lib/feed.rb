@@ -20,11 +20,11 @@ EM.run {
 		p requesting
 		case requesting[0]
 		when "reports"
-			faye.publish(response_channel, { data: reports, version: 1 })
+			faye.publish(response_channel, { state: reports, version: 1 })
 		when "report"
 			report = Report.find(requesting[1])
 			report_version = report.latest_version
-			faye.publish(response_channel, { data: report_version.data, projector: report_version.projector, version: report_version.version, name: report.name })
+			faye.publish(response_channel, { state: { data: report_version.data, projector: report_version.projector }, version: report_version.version, name: report.name })
 		end
 	}
 
@@ -32,7 +32,7 @@ EM.run {
 	EM.add_periodic_timer(1) {
 		ReportVersion.where(reported: false).group_by { |rv| rv.report_id }.each_pair { |report_id, report_versions|
 			report_versions.sort_by { |v| v.version }.each { |report_version|
-				faye.publish("/report/"+report_id.to_s, { data: report_version.data, projector: report_version.projector, version: report_version.version })
+				faye.publish("/report/"+report_id.to_s, { state: { data: report_version.data, projector: report_version.projector }, version: report_version.version })
 				report_version.reported = true
 				report_version.save
 			}
