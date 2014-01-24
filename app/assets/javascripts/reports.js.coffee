@@ -104,7 +104,7 @@ class SpinnerView extends Backbone.Marionette.ItemView
 
 #----------------------------------- faye collection
 
-class FayeCollection extends Backbone.Collection
+RemoteObjectMixin = {
 
         listen: (path) ->
                 @faye_path = path
@@ -166,6 +166,13 @@ class FayeCollection extends Backbone.Collection
                 @full_feed.cancel()
                 @incremental_feed.cancel()
                 window.clearInterval(@refetch_timer)
+        }
+
+
+class RemoteCollection extends Backbone.Collection
+        constructor: (params...)->
+                super params...
+                $.extend(@, RemoteObjectMixin)
 
 #----------------------------------- controllers
 
@@ -174,7 +181,7 @@ class ListController extends Marionette.Controller
         initialize: (options) ->
                 @api = options.api
                 @listenTo(@api, "navigate", @navigate)
-                @reports = new FayeCollection
+                @reports = new RemoteCollection
                 @reports.listen("/reports")
                 @reportListView = new ReportListView
                 @reportListView.collection = @reports
@@ -207,7 +214,7 @@ class ReportController extends Marionette.Controller
                                 @reportView.close()
                         if new_state.report and new_state.report.length > 0
                                 $(".report_row").removeClass("focused_report")
-                                @report = new FayeCollection
+                                @report = new RemoteCollection
                                 @report.listen("/report/"+new_state.report)
                                 @reportDescription = new ReportDescription({data: @report})
                                 @reportView = new ReportView(model: @reportDescription)
