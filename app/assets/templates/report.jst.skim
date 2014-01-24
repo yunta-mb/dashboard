@@ -1,8 +1,6 @@
-#report_details
-  span#report_title
-    | &nbsp;
-  |  : 
-  span#report_version
-    | &nbsp;
 #report_body
   | &nbsp;
+#report_details
+  |  #
+  span#report_version
+    | &nbsp;

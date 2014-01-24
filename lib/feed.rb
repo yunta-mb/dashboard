@@ -24,7 +24,7 @@ EM.run {
 		when "report"
 			report = Report.find(requesting[1])
 			report_version = report.latest_version
-			faye.publish(response_channel, { state: { data: report_version.data, projector: report_version.projector }, version: report_version.version, name: report.name })
+			faye.publish(response_channel, { state: { data: report_version.data, projector: report_version.projector }, version: report_version.version })
 		end
 	}
 

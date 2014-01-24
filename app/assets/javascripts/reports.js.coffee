@@ -41,8 +41,7 @@ class ReportView extends Backbone.Marionette.ItemView
                                 $("#report_body").html("&nbsp;")
                                 @projector = new @Projector()
                         @projector.update(@model.attributes.data)
-                        $("#report_version").html(@model.attributes.current_version)
-                        $("#report_title").html(@model.attributes.name)
+                        $("#report_version").html(@model.current_version)
 
 
 #----------------------------------- report list
