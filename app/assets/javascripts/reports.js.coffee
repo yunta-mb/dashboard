@@ -37,10 +37,16 @@ class ReportView extends Backbone.Marionette.ItemView
                 if @model.current_version
                         if @model.attributes.projector != @last_projector_code
                                 @last_projector_code = @model.attributes.projector
-                                eval(@model.attributes.projector)
                                 $("#report_body").html("&nbsp;")
-                                @projector = new @Projector()
-                        @projector.update(@model.attributes.data)
+                                try
+                                        eval(@model.attributes.projector)
+                                        @projector = new @Projector()
+                                catch e
+                                        console.log("Projector evaluation or construction error", e.message, e.lineNumber)
+                        try
+                                @projector.update(@model.attributes.data)
+                        catch e
+                                console.log("Projector update error", e.message, e.lineNumber)
                         $("#report_version").html(@model.current_version)
 
 
@@ -73,13 +79,10 @@ class ReportListView extends Backbone.Marionette.CompositeView
         appendHtml: (collection_view, item_view) ->
                 collection_view.$("ul").append(item_view.el)
 
-        ui: {
-                show_all_submissions: "#show_all_submissions"
-                show_all_submissions_count: "#submissions_matching_count"
-                }
-
         updateView: () =>
-                $(".submission_"+window.API.current_state.submission+"_row").addClass("focused_submission")
+                $(".report_title").removeClass("focused_report")
+                $(".report_title").blur()
+                $(".report_"+window.API.current_state.report+"_title").addClass("focused_report")
 
                 @children.each (report_title) ->
                         report_title.ui.link.attr("href","#"+window.API.compose(report: report_title.model.id)) if report_title.ui?
@@ -194,12 +197,7 @@ class ListController extends Marionette.Controller
                 @listenTo(@reports, "updated", @reportListView.updateView)
 
         navigate: (old_state, new_state, changed) ->
-#                console.log("con navigate",changed)
-                if _.intersection(changed, []).length > 0
-                        @submissions.reset()
-                        @submissions.fetch()
-                else
-                        #@submissions_view.updateView()
+                @reportListView.updateView()
 
 
 class ReportController extends Marionette.Controller
@@ -210,7 +208,6 @@ class ReportController extends Marionette.Controller
                 $(window).resize(@resize)
 
         navigate: (old_state,new_state,changed) ->
-#                console.log("rep navigate")
                 if _.intersection(changed, ["report"]).length > 0
                         if @reportView
                                 @report.die_mf_die()
@@ -224,8 +221,6 @@ class ReportController extends Marionette.Controller
                                 @listenTo(@report, "updated", @reportView.updateView)
                         else
                                 application.report_region.close()
-                else
-                        @submissionDetailsView.updateView() if @submissionDetailsView?
 
         resize: () =>
                 @reportView.updateView() if @reportView?
@@ -308,6 +303,7 @@ class API
 
 
         navigate: (inp) ->
+                $(":focus").blur()
                 old_state = @current_state #@or {})
                 @current_state = _.extend({},old_state,inp)
                 application.router.navigate(@compose({}))
