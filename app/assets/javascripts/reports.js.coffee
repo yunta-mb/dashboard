@@ -29,22 +29,25 @@ Backbone.Marionette.Renderer.render = (template, data) ->
 
 #----------------------------------- report
 
-class ReportDescription extends Backbone.Model
-
 class ReportView extends Backbone.Marionette.ItemView
 
         template: "report"
 
         updateView: () =>
-                if @model.attributes.data.metadata?
-                        if @model.attributes.data.metadata.projector != @last_projector_code
-                                @last_projector_code = @model.attributes.data.metadata.projector
-                                eval(@model.attributes.data.metadata.projector)
+                if @model.current_version
+                        if @model.attributes.projector != @last_projector_code
+                                @last_projector_code = @model.attributes.projector
                                 $("#report_body").html("&nbsp;")
-                                @projector = new @Projector()
-                        @projector.update(@model.attributes.data.metadata.data)
-                        $("#report_version").html(@model.attributes.data.current_version)
-                        $("#report_title").html(@model.attributes.data.metadata.name)
+                                try
+                                        eval(@model.attributes.projector)
+                                        @projector = new @Projector()
+                                catch e
+                                        console.log("Projector evaluation or construction error", e.message, e.lineNumber)
+                        try
+                                @projector.update(@model.attributes.data)
+                        catch e
+                                console.log("Projector update error", e.message, e.lineNumber)
+                        $("#report_version").html(@model.current_version)
 
 
 #----------------------------------- report list
@@ -76,13 +79,10 @@ class ReportListView extends Backbone.Marionette.CompositeView
         appendHtml: (collection_view, item_view) ->
                 collection_view.$("ul").append(item_view.el)
 
-        ui: {
-                show_all_submissions: "#show_all_submissions"
-                show_all_submissions_count: "#submissions_matching_count"
-                }
-
         updateView: () =>
-                $(".submission_"+window.API.current_state.submission+"_row").addClass("focused_submission")
+                $(".report_title").removeClass("focused_report")
+                $(".report_title").blur()
+                $(".report_"+window.API.current_state.report+"_title").addClass("focused_report")
 
                 @children.each (report_title) ->
                         report_title.ui.link.attr("href","#"+window.API.compose(report: report_title.model.id)) if report_title.ui?
@@ -102,9 +102,9 @@ class SpinnerView extends Backbone.Marionette.ItemView
 
 
 
-#----------------------------------- faye collection
+#----------------------------------- faye-backbone model & collection
 
-class FayeCollection extends Backbone.Collection
+RemoteObjectMixin = {
 
         listen: (path) ->
                 @faye_path = path
@@ -115,23 +115,21 @@ class FayeCollection extends Backbone.Collection
                 console.log("Listening for list updates: ",@faye_path+"/client/"+window.client_id)
 
                 @full_feed = window.faye.subscribe("/client/"+window.client_id+path, (message) =>
-#                        console.log("full data", message)
+#                        console.log("full data", @, this)
                         return if @current_version and message.version <= @current_version
-                        @set(message.data)
+                        @state_set(message.state)
                         @current_version = message.version
-                        @metadata = message
                         @apply_updates()
                         )
 
                 @incremental_feed = window.faye.subscribe(path, (message) =>
- #                       console.log("incremental data")
                         @update_queue.push(message)
                         @apply_updates()
                         )
 
                 @refetch_timer = window.setInterval((() =>
                         if (! @current_version) and ( (! @last_full_request_timestamp) or ((new Date().getTime()) - @last_full_request_timestamp > 10000))
-                                console.log("not getting full list? re-asking")
+                                console.log("didn't get full data in 10s, re-asking")
                                 @request_full()
                         ), 10000)
 
@@ -149,16 +147,11 @@ class FayeCollection extends Backbone.Collection
                         update = @update_queue.shift()
                         continue if update.version <= @current_version
                         if update.version == @current_version + 1
-                                if update.data
-                                        @set(update.data)
-                                        @metadata.data = update.data
-                                if update.projector
-                                        @metadata.projector = update.projector
-                                if update.name
-                                        @metadata.name = update.name
+                                @state_update(update.update) if update.update
+                                @state_set(update.state) if update.state
                                 @current_version = update.version
                         else
-                                console.log("we lost some updates, requesting full set")
+                                console.log("we lost some updates, requesting full data")
                                 @request_full()
                 @trigger("updated")
 
@@ -167,6 +160,28 @@ class FayeCollection extends Backbone.Collection
                 @incremental_feed.cancel()
                 window.clearInterval(@refetch_timer)
 
+        }
+
+
+class RemoteCollection extends Backbone.Collection
+
+        constructor: (params...)->
+                $.extend(@, RemoteObjectMixin)
+                super params...
+
+        state_set: (new_state) ->
+                @set(new_state)
+
+
+class RemoteModel extends Backbone.Model
+
+        constructor: (params...)->
+                $.extend(@, RemoteObjectMixin)
+                super params...
+
+        state_set: (new_state) ->
+                @set(new_state)
+
 #----------------------------------- controllers
 
 class ListController extends Marionette.Controller
@@ -174,22 +189,15 @@ class ListController extends Marionette.Controller
         initialize: (options) ->
                 @api = options.api
                 @listenTo(@api, "navigate", @navigate)
-                @reports = new FayeCollection
+                @reports = new RemoteCollection
                 @reports.listen("/reports")
                 @reportListView = new ReportListView
                 @reportListView.collection = @reports
                 application.list_region.show(@reportListView)
                 @listenTo(@reports, "updated", @reportListView.updateView)
-                # d3 - define behaviour
-                # faye - start updates
 
         navigate: (old_state, new_state, changed) ->
-#                console.log("con navigate",changed)
-                if _.intersection(changed, []).length > 0
-                        @submissions.reset()
-                        @submissions.fetch()
-                else
-                        #@submissions_view.updateView()
+                @reportListView.updateView()
 
 
 class ReportController extends Marionette.Controller
@@ -200,25 +208,19 @@ class ReportController extends Marionette.Controller
                 $(window).resize(@resize)
 
         navigate: (old_state,new_state,changed) ->
-                console.log("rep navigate")
                 if _.intersection(changed, ["report"]).length > 0
                         if @reportView
                                 @report.die_mf_die()
                                 @reportView.close()
                         if new_state.report and new_state.report.length > 0
                                 $(".report_row").removeClass("focused_report")
-                                @report = new FayeCollection
+                                @report = new RemoteModel
                                 @report.listen("/report/"+new_state.report)
-                                @reportDescription = new ReportDescription({data: @report})
-                                @reportView = new ReportView(model: @reportDescription)
+                                @reportView = new ReportView(model: @report)
                                 application.report_region.show(@reportView)
                                 @listenTo(@report, "updated", @reportView.updateView)
-#                                console.log("x")
-#                                application.list_region.show(@reportView)
                         else
                                 application.report_region.close()
-                else
-                        @submissionDetailsView.updateView() if @submissionDetailsView?
 
         resize: () =>
                 @reportView.updateView() if @reportView?
@@ -301,6 +303,7 @@ class API
 
 
         navigate: (inp) ->
+                $(":focus").blur()
                 old_state = @current_state #@or {})
                 @current_state = _.extend({},old_state,inp)
                 application.router.navigate(@compose({}))
@@ -347,11 +350,10 @@ $(document).ready( () ->
 
         faye_url = '/live'
         faye_url = 'http://localhost:3001/live' if document.location.hostname == "localhost"
-        window.faye = new Faye.Client(faye_url)
+        window.faye = new Faye.Client(faye_url, timeout: 60)
 
         window.pings_missed = 0
         window.faye.subscribe("/ping", (message) =>
-                console.log("ping")
                 if window.pings_missed > 10
                         $(".ping-fail-overlay").css("display":"none")
                 window.pings_missed = 0
