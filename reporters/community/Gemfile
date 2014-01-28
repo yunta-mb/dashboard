@@ -1,0 +1,7 @@
+source 'https://rubygems.org'
+
+# twitter API
+gem 'twitter'
+
+# facebook API
+gem "koala"
