@@ -1,7 +1,10 @@
 source 'https://rubygems.org'
 
+gem 'rest-client'
+
 # twitter API
 gem 'twitter'
 
 # facebook API
 gem "koala"
+

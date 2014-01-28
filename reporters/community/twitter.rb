@@ -41,14 +41,14 @@ def show_recent_posts(keyword, hours = 4)
 	tweets = Array.new
 	client.search(keyword).each do |tweet|
 		if tweet.created_at >= past
-			puts tweet.text
-			tweets.push tweet.created_at
+			p tweet.created_at.class.name
+			tweets.push timestamp: tweet.created_at, retweet_count: tweet.retweet_count, favorite_count: tweet.favorite_count, url: tweet.uri.to_s, text: tweet.text
 		else
-			return
+			return tweets
 		end
 	end
 end
 
-total_count("#")
+#total_count("#")
 # show_recent_posts("#", 24)
 
