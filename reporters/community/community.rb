@@ -21,7 +21,7 @@ loop {
 
 	puts Benchmark.measure {
 		report[:recent_activity] = show_recent_posts(TWITTER_TAG+" -rt", 4).map { |tweet| 
-			tweet[:timestamp] = tweet[:timestamp].strftime("%Y-%m-%dT%H:%M:%S")
+			tweet[:timestamp] = tweet[:timestamp].strftime("%Y-%m-%dT%H:%M:%SZ")
 			tweet[:system] = "twitter"
 			tweet[:id] = tweet[:url]
 			tweet[:magnitude] = 1+tweet[:retweet_count]
