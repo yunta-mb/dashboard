@@ -37,7 +37,7 @@ class ReportView extends Backbone.Marionette.ItemView
                 if @model.current_version
                         if @model.attributes.projector != @last_projector_code
                                 @last_projector_code = @model.attributes.projector
-                                $("#report_body").html("&nbsp;")
+                                $("#report_body").html("")
                                 try
                                         eval(@model.attributes.projector)
                                         @projector = new @Projector()
