@@ -5,9 +5,11 @@ Dashboard::Application.routes.draw do
   # You can have the root of your site routed with "root"
 
 	root 'application#index'
-	resources :reports, only: [:index] do
+
+	resources :reports, only: [:create] do
 		resources :versions, only: [:show, :create], controller: "report_versions"
 	end
+
 
 
   # Example of regular route:
