@@ -349,7 +349,7 @@ $(document).ready( () ->
                 window.client_id += Math.floor(Math.random()*16).toString(16)
 
         faye_url = '/live'
-        faye_url = 'http://localhost:3001/live' if document.location.hostname == "localhost"
+        faye_url = 'http://localhost:3001/live' if document.location.hostname == "localhost" or document.location.hostname == "127.0.0.1"
         window.faye = new Faye.Client(faye_url, timeout: 60)
 
         window.pings_missed = 0
