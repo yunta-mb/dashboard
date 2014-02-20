@@ -10,6 +10,9 @@ def reports
 	}
 end
 
+latest_reports_change_uploaded = 0
+reports_version = 1
+
 EM.run {
 	faye = Faye::Client.new(SERVER_URL)
 
@@ -20,7 +23,7 @@ EM.run {
 		p requesting
 		case requesting[0]
 		when "reports"
-			faye.publish(response_channel, { state: reports, version: 1 })
+			faye.publish(response_channel, { state: reports, version: reports_version })
 		when "report"
 			report = Report.find(requesting[1])
 			report_version = report.latest_version
@@ -37,6 +40,11 @@ EM.run {
 				report_version.save
 			}
 		}
+		if (latest_reports_change = Report.all.map { |report| [report.created_at,report.updated_at].max }.max.to_i) > latest_reports_change_uploaded
+			latest_reports_change_uploaded = latest_reports_change
+			reports_version += 1
+			faye.publish("/reports", { state: reports, version: reports_version })
+		end
 	}
 
 

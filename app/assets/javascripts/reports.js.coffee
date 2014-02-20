@@ -92,6 +92,9 @@ class ReportListView extends Backbone.Marionette.CompositeView
 
         emptyView: ReportListEmpty
 
+        redraw: () =>
+                @render()
+                @updateView()
 
 #----------------------------------- spinner
 
@@ -194,7 +197,7 @@ class ListController extends Marionette.Controller
                 @reportListView = new ReportListView
                 @reportListView.collection = @reports
                 application.list_region.show(@reportListView)
-                @listenTo(@reports, "updated", @reportListView.updateView)
+                @listenTo(@reports, "updated", @reportListView.redraw)
 
         navigate: (old_state, new_state, changed) ->
                 @reportListView.updateView()
