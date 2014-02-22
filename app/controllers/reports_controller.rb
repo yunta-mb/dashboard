@@ -7,6 +7,7 @@ class ReportsController < ApplicationController
 		report.name = params[:name]
 		report.priority = params[:priority]
 		report.save
+		Report.connection.instance_variable_get(:@connection).exec("NOTIFY data_change")
 		respond_to { |format|
 			format.json { render json: report }
 		}

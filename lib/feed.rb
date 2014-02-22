@@ -13,6 +13,8 @@ end
 latest_reports_change_uploaded = 0
 reports_version = 1
 
+
+
 EM.run {
 	faye = Faye::Client.new(SERVER_URL)
 
@@ -32,7 +34,7 @@ EM.run {
 	}
 
 
-	EM.add_periodic_timer(1) {
+	broadcast_changes = proc {
 		ReportVersion.where(reported: false).group_by { |rv| rv.report_id }.each_pair { |report_id, report_versions|
 			report_versions.sort_by { |v| v.version }.each { |report_version|
 				faye.publish("/report/"+report_id.to_s, { state: { data: report_version.data, projector: report_version.projector }, version: report_version.version })
@@ -45,6 +47,19 @@ EM.run {
 			reports_version += 1
 			faye.publish("/reports", { state: reports, version: reports_version })
 		end
+	}
+
+
+	Thread.new {
+		ActiveRecord::Base.connection_pool.with_connection { |connection|
+			connection = connection.instance_variable_get(:@connection)
+			connection.exec("LISTEN data_change")
+			loop {
+				connection.wait_for_notify { |channel, pid, payload| 
+					EM.schedule broadcast_changes
+				}
+			}
+		}
 	}
 
 

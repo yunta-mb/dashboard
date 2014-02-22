@@ -26,6 +26,7 @@ class ReportVersionsController < ApplicationController
 			report_version.projector = (content[:projector] or (latest_report_version ? latest_report_version.projector : nil))
 			report_version.save
 		}
+		Report.connection.instance_variable_get(:@connection).exec("NOTIFY data_change")
 		render json: { version: report_version.version }
 	end
 	
