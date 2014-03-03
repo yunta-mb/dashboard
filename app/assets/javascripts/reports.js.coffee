@@ -251,6 +251,25 @@ class ListFolderController extends Marionette.Controller
                 $("#list_switch_link").attr("href", "#"+@api.compose(list_hidden: (not @api.current_state.list_hidden)))
 
 
+class DemoController extends Marionette.Controller
+
+        initialize: (options) ->
+                @api = options.api
+                @listenTo(@api, "navigate", @navigate)
+                @interval = false
+
+        show_next_report: () =>
+                console.log("switching report",window.listController.reports)
+                current_index = window.listController.reports.models.indexOf(window.listController.reports.get(@api.current_state.report or 1))
+                new_index = (current_index + 1) % window.listController.reports.models.length
+                @api.navigate(report: window.listController.reports.models[new_index].id.toString())
+
+        navigate: (old_state,new_state,changed) ->
+                if _.intersection(changed, ["demo"]).length > 0
+                        clearInterval(@interval) if @interval
+                        if new_state.demo
+                                @interval = window.setInterval(@show_next_report,parseInt(new_state.demo)*1000)
+
 
 #----------------------------------- router
 
@@ -268,7 +287,8 @@ class API
         current_state: {
                 report: undefined
                 unfolded_groups: []
-                list_hidden: false }
+                list_hidden: false
+                demo: false }
 
 
         constructor: () ->
@@ -284,6 +304,8 @@ class API
                         ret += "/groups/"+data.unfolded_groups
                 if data.list_hidden
                         ret += "/list/hide"
+                if data.demo? and data.demo
+                        ret += "/demo/"+data.demo
                 ret.replace(/^\//,"")
 
 
@@ -293,7 +315,8 @@ class API
                 new_state = {
                         report: null
                         unfolded_groups: []
-                        list_hidden: false }
+                        list_hidden: false
+                        demo: false }
                 i = 0
                 while i+1 < split.length
                         key = split[i]
@@ -302,6 +325,7 @@ class API
                                 when "report" then new_state.report = value
                                 when "groups" then new_state.unfolded_groups = value.split(",")
                                 when "list" then new_state.list_hidden = (value == "hide")
+                                when "demo" then new_state.demo = value
                                 else
                                         console.log("stupid key in route: ",key)
                         i += 2
@@ -314,7 +338,7 @@ class API
                 @current_state = _.extend({},old_state,inp)
                 application.router.navigate(@compose({}))
                 changed = _.filter(_.keys(@current_state), (key) => ( @current_state[key] != old_state[key]) )
-#                console.log("cc",old_state,@current_state,changed)
+                #console.log("cc",old_state,@current_state,changed)
                 @trigger("navigate",old_state,@current_state,changed)
 
 
@@ -374,6 +398,7 @@ $(document).ready( () ->
         window.listController = new ListController(api: window.API)
         window.reportController = new ReportController(api: window.API)
         window.listFolderController = new ListFolderController(api: window.API)
+        window.demoController = new DemoController(api: window.API)
 
         application.start({})
 
