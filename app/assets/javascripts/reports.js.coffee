@@ -215,9 +215,10 @@ class ReportController extends Marionette.Controller
 
         navigate: (old_state,new_state,changed) ->
                 if _.intersection(changed, ["report"]).length > 0
-                        if @reportView
+                        if @report?
+                                @stopListening(@report)
                                 @report.die_mf_die()
-                                @reportView.close()
+                                @reportView.close() if @reportView?
                         if new_state.report and new_state.report.length > 0
                                 $(".report_row").removeClass("focused_report")
                                 @report = new RemoteModel
@@ -259,7 +260,7 @@ class DemoController extends Marionette.Controller
                 @interval = false
 
         show_next_report: () =>
-                console.log("switching report",window.listController.reports)
+#                console.log("switching report",window.listController.reports)
                 current_index = window.listController.reports.models.indexOf(window.listController.reports.get(@api.current_state.report or 1))
                 new_index = (current_index + 1) % window.listController.reports.models.length
                 @api.navigate(report: window.listController.reports.models[new_index].id.toString())
