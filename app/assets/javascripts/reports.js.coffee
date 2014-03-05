@@ -382,7 +382,7 @@ $(document).ready( () ->
         faye_url = '/live'
         faye_url = 'http://localhost:3001/live' if document.location.hostname == "localhost" or document.location.hostname == "127.0.0.1"
         window.faye = new Faye.Client(faye_url, timeout: 60)
-        window.faye.disable("websocket")
+        window.faye.disable("eventsource")
 
         window.pings_missed = 0
         window.faye.subscribe("/ping", (message) =>
