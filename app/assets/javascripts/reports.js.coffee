@@ -47,7 +47,8 @@ class ReportView extends Backbone.Marionette.ItemView
                                 @projector.update(@model.attributes.data)
                         catch e
                                 console.log("Projector update error", e.message, e.lineNumber)
-                        $("#report_version").html(@model.current_version)
+                        date = new Date(@model.current_timestamp)
+                        $("#report_timestamp").html(date.getFullYear() + "-" + ("0"+(date.getMonth()+1)).slice(-2) + "-" + ("0"+date.getDate()).slice(-2) + " " + ("0" + date.getHours()).slice(-2) + ":" + ("0" + date.getMinutes()).slice(-2) + ":" + ("0"+date.getSeconds()).slice(-2))
 
 
 #----------------------------------- report list
@@ -114,6 +115,7 @@ RemoteObjectMixin = {
                 @current_version = null
                 @last_full_request_timestamp = null
                 @update_queue = []
+                @current_timestamp = null
 
                 console.log("Listening for list updates: ",@faye_path+"/client/"+window.client_id)
 
@@ -122,6 +124,7 @@ RemoteObjectMixin = {
                         return if @current_version and message.version <= @current_version
                         @state_set(message.state)
                         @current_version = message.version
+                        @current_timestamp = message.timestamp
                         @apply_updates()
                         )
 
@@ -153,9 +156,11 @@ RemoteObjectMixin = {
                                 @state_update(update.update) if update.update
                                 @state_set(update.state) if update.state
                                 @current_version = update.version
+                                @current_timestamp = message.timestamp
                         else if update.state?
                                 @state_set(update.state)
                                 @current_version = update.version
+                                @current_timestamp = message.timestamp
                         else
                                 console.log("we lost some updates, requesting full data.",@current_version, update.version)
                                 @request_full()

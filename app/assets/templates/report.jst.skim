@@ -1,6 +1,7 @@
 #report_body
   | &nbsp;
-#report_details
-  |  #
-  span#report_version
-    | &nbsp;
+#report_details_wrapper
+  .report_details_big
+  .report_details_always_visible
+    span#report_timestamp
+      | &nbsp;

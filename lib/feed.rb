@@ -42,7 +42,7 @@ EM.run {
 			report = Report.find(requesting[1])
 			report_version = report.latest_version
 			benchmark("publishing report version %i#%i for client %s"%[report_version.report_id, report_version.version, message["client"]]) {
-				faye.publish(response_channel, { state: { data: report_version.data, projector: report_version.projector }, version: report_version.version }) if report_version
+				faye.publish(response_channel, { state: { data: report_version.data, projector: report_version.projector}, version: report_version.version, timestamp: report_version.updated_at  }) if report_version
 			}
 		end
 	}
@@ -55,7 +55,7 @@ EM.run {
 			versions_to_send = versions[latest_full_update .. -1]
 			versions_to_send.each { |report_version|
 				benchmark("publishing report version %i#%i"%[report_version.report_id, report_version.version]) {
-					faye.publish("/report/"+report_id.to_s, { state: { data: report_version.data, projector: report_version.projector }, version: report_version.version })
+					faye.publish("/report/"+report_id.to_s, { state: { data: report_version.data, projector: report_version.projector }, version: report_version.version, timestamp: report_version.updated_at  })
 				}
 				report_version.reported = true
 				report_version.save
