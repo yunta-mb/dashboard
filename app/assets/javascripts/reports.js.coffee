@@ -156,11 +156,11 @@ RemoteObjectMixin = {
                                 @state_update(update.update) if update.update
                                 @state_set(update.state) if update.state
                                 @current_version = update.version
-                                @current_timestamp = message.timestamp
+                                @current_timestamp = update.timestamp
                         else if update.state?
                                 @state_set(update.state)
                                 @current_version = update.version
-                                @current_timestamp = message.timestamp
+                                @current_timestamp = update.timestamp
                         else
                                 console.log("we lost some updates, requesting full data.",@current_version, update.version)
                                 @request_full()
