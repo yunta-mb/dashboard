@@ -86,7 +86,7 @@ class ReportListView extends Backbone.Marionette.CompositeView
                 $(".report_"+window.API.current_state.report+"_title").addClass("focused_report")
 
                 @children.each (report_title) ->
-                        report_title.ui.link.attr("href","#"+window.API.compose(report: report_title.model.id)) if report_title.ui?
+                        report_title.ui.link.attr("href",window.API.compose(report: report_title.model.id)) if report_title.ui?
 
         onShow: () ->
                 @updateView()
@@ -254,7 +254,7 @@ class ListFolderController extends Marionette.Controller
                         els.removeClass("list_folded")
                         els.addClass("list_unfolded")
                 window.reportController.resize() if _.intersection(changed, ["list_hidden"]).length > 0
-                $("#list_switch_link").attr("href", "#"+@api.compose(list_hidden: (not @api.current_state.list_hidden)))
+                $("#list_switch_link").attr("href", @api.compose(list_hidden: (not @api.current_state.list_hidden)))
 
 
 class DemoController extends Marionette.Controller
@@ -312,8 +312,9 @@ class API
                         ret += "/list/hide"
                 if data.demo? and data.demo
                         ret += "/demo/"+data.demo
-                ret.replace(/^\//,"")
-
+                if /[^\/]*:\/\/[^\/\#]*\#/.test(window.location)
+                        ret.replace(/^\//,"#")
+                ret
 
         parse: (path) ->
                 split = path.split("/")
@@ -411,7 +412,13 @@ $(document).ready( () ->
 
         application.start({})
 
-        Backbone.history.start()
+        Backbone.history.start({pushState: true})
+
+
+        $(document).on('click', 'a', (event) ->
+                event.preventDefault()
+                Backbone.history.navigate(event.currentTarget.pathname, trigger: true))
+
 
         $(".toggle_visibility").live("click", () ->
                 window.toggle_visibility("#"+this.id+"_to_hide", "#"+this.id+"_to_show"))
