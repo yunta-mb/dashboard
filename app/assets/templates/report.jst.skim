@@ -1,7 +1,12 @@
 #report_body
   | &nbsp;
-#report_details_wrapper
-  .report_details_big
-  .report_details_always_visible
+#report_details_wrapper.list_unfolded
+  #report_details_big
+    svg
+      g.months
+      g.years
+      circle
+      rect.input_overlay
+  #report_details_always_visible
     span#report_timestamp
       | &nbsp;

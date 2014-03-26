@@ -49,6 +49,7 @@ class ReportView extends Backbone.Marionette.ItemView
                                 console.log("Projector update error", e.message, e.lineNumber)
                         date = new Date(@model.current_timestamp)
                         $("#report_timestamp").html(date.getFullYear() + "-" + ("0"+(date.getMonth()+1)).slice(-2) + "-" + ("0"+date.getDate()).slice(-2) + " " + ("0" + date.getHours()).slice(-2) + ":" + ("0" + date.getMinutes()).slice(-2) + ":" + ("0"+date.getSeconds()).slice(-2))
+                        window.timelineController.set_current_report_date(date)
 
 
 #----------------------------------- report list
@@ -219,15 +220,18 @@ class ReportController extends Marionette.Controller
                 $(window).resize(@resize)
 
         navigate: (old_state,new_state,changed) ->
-                if _.intersection(changed, ["report"]).length > 0
+                if _.intersection(changed, ["report","date"]).length > 0
                         if @report?
                                 @stopListening(@report)
                                 @report.die_mf_die()
                                 @reportView.close() if @reportView?
                         if new_state.report and new_state.report.length > 0
                                 $(".report_row").removeClass("focused_report")
+                                path = "/report/"+new_state.report
+                                if new_state.date? and new_state.date
+                                        path += "/date/"+new_state.date
                                 @report = new RemoteModel
-                                @report.listen("/report/"+new_state.report)
+                                @report.listen(path)
                                 @reportView = new ReportView(model: @report)
                                 application.report_region.show(@reportView)
                                 @listenTo(@report, "updated", @reportView.updateView)
@@ -276,6 +280,83 @@ class DemoController extends Marionette.Controller
                         if new_state.demo
                                 @interval = window.setInterval(@show_next_report,parseInt(new_state.demo)*1000)
 
+class TimelineController extends Marionette.Controller
+
+        initialize: (options) ->
+                @api = options.api
+                @listenTo(@api, "navigate", @navigate)
+                $(window).resize(@repaint)
+                @date = null
+                @timeline_repainting = false
+                @repaint()
+
+        navigate: (old_state,new_state,changed) ->
+                if _.intersection(changed, ["report","date","list_hidden"]).length > 0
+                        @repaint()
+
+        set_current_report_date: (@date) =>
+                d3.select("#report_details_big svg circle")
+                        .attr("cx",@scale(@date))
+
+        repaint: () =>
+                now = new Date()
+                @scale = d3.time.scale().domain([new Date(now - 60 * 60 * 24 * 365 * 1000), now]).range([0,$("#report_details_big").width() - 6])
+                month_axis = d3.svg.axis()
+                        .scale(@scale)
+                        .orient("bottom")
+                        .ticks(d3.time.months, 1)
+                        .tickFormat(d3.time.format("%B"))
+                        .tickSize(6,2)
+
+                year_axis = d3.svg.axis()
+                        .scale(@scale)
+                        .orient("bottom")
+                        .ticks(d3.time.years, 1)
+                        .tickFormat(d3.time.format("%Y"))
+                        .tickSize(6,0)
+
+                d3.select("#report_details_big svg .months").attr("transform", "translate(0,5)").call(month_axis)
+                d3.select("#report_details_big svg .years").attr("transform", "translate(0,25)").call(year_axis)
+
+                circle = d3.select("#report_details_big svg circle")
+                        .attr("r","5px")
+                        .attr("cx",(if @date then @scale(@date) else -100))
+                        .attr("cy","6px")
+                        .classed("live", not (@api.current_state.date? and @api.current_state.date))
+
+                input_overlay = d3.select("#report_details_big svg .input_overlay")
+                        .attr("x","0")
+                        .attr("y","0")
+                        .attr("width",$("#report_details_big").width())
+                        .attr("height",$("#report_details_big").height())
+                        .style("cursor","crosshair")
+                        .on("click",() ->
+                                window.timelineController.timeline_repainting = true
+                                x = d3.mouse(this)[0]
+                                if x > $("#report_details_big").width() - 10
+                                        window.API.navigate(date: null)
+                                else
+                                        window.API.navigate(date: window.timelineController.scale.invert(x).getTime()))
+
+
+                if @api.current_state.date
+                        $("#report_details_big").show()
+
+                $("#report_details_wrapper").on('mouseenter', (event) =>
+                        if @timeline_repainting
+                                $("#report_details_big").show()
+                        else
+                                $("#report_details_big").show('fast')
+                        @timeline_repainting = false
+                        )
+
+                $("#report_details_wrapper").on('mouseleave', (event) ->
+                        if not window.API.current_state.date
+                                $("#report_details_big").hide('fast')
+                        )
+
+
+
 
 #----------------------------------- router
 
@@ -294,7 +375,8 @@ class API
                 report: undefined
                 unfolded_groups: []
                 list_hidden: false
-                demo: false }
+                demo: false
+                date: undefined }
 
 
         constructor: () ->
@@ -312,6 +394,8 @@ class API
                         ret += "/list/hide"
                 if data.demo? and data.demo
                         ret += "/demo/"+data.demo
+                if data.date? and data.date
+                        ret += "/date/"+data.date
                 if /[^\/]*:\/\/[^\/\#]*\#/.test(window.location)
                         ret.replace(/^\//,"#")
                 ret
@@ -323,7 +407,8 @@ class API
                         report: null
                         unfolded_groups: []
                         list_hidden: false
-                        demo: false }
+                        demo: false
+                        date: null }
                 i = 0
                 while i+1 < split.length
                         key = split[i]
@@ -333,6 +418,7 @@ class API
                                 when "groups" then new_state.unfolded_groups = value.split(",")
                                 when "list" then new_state.list_hidden = (value == "hide")
                                 when "demo" then new_state.demo = value
+                                when "date" then new_state.date = value
                                 else
                                         console.log("stupid key in route: ",key)
                         i += 2
@@ -409,6 +495,7 @@ $(document).ready( () ->
         window.reportController = new ReportController(api: window.API)
         window.listFolderController = new ListFolderController(api: window.API)
         window.demoController = new DemoController(api: window.API)
+        window.timelineController = new TimelineController(api: window.API)
 
         application.start({})
 
@@ -418,7 +505,6 @@ $(document).ready( () ->
         $(document).on('click', 'a', (event) ->
                 event.preventDefault()
                 Backbone.history.navigate(event.currentTarget.pathname, trigger: true))
-
 
         $(".toggle_visibility").live("click", () ->
                 window.toggle_visibility("#"+this.id+"_to_hide", "#"+this.id+"_to_show"))
