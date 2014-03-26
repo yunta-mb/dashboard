@@ -87,7 +87,7 @@ class ReportListView extends Backbone.Marionette.CompositeView
                 $(".report_"+window.API.current_state.report+"_title").addClass("focused_report")
 
                 @children.each (report_title) ->
-                        report_title.ui.link.attr("href",window.API.compose(report: report_title.model.id)) if report_title.ui?
+                        report_title.ui.link.attr("href",window.API.compose(report: report_title.model.id, date: null)) if report_title.ui?
 
         onShow: () ->
                 @updateView()
