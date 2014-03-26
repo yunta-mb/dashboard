@@ -300,7 +300,7 @@ class TimelineController extends Marionette.Controller
 
         repaint: () =>
                 now = new Date()
-                @scale = d3.time.scale().domain([new Date(now - 60 * 60 * 24 * 365 * 1000), now]).range([0,$("#report_details_big").width() - 6])
+                @scale = d3.time.scale().domain([new Date(now - 60 * 60 * 24 * 365 * 1000), now]).range([20,$("#report_details_big").width() - 26])
                 month_axis = d3.svg.axis()
                         .scale(@scale)
                         .orient("bottom")
@@ -333,7 +333,7 @@ class TimelineController extends Marionette.Controller
                         .on("click",() ->
                                 window.timelineController.timeline_repainting = true
                                 x = d3.mouse(this)[0]
-                                if x > $("#report_details_big").width() - 10
+                                if x > $("#report_details_big").width() - 30
                                         window.API.navigate(date: null)
                                 else
                                         window.API.navigate(date: window.timelineController.scale.invert(x).getTime()))
@@ -346,13 +346,13 @@ class TimelineController extends Marionette.Controller
                         if @timeline_repainting
                                 $("#report_details_big").show()
                         else
-                                $("#report_details_big").show('fast')
+                                $("#report_details_big").show()
                         @timeline_repainting = false
                         )
 
                 $("#report_details_wrapper").on('mouseleave', (event) ->
                         if not window.API.current_state.date
-                                $("#report_details_big").hide('fast')
+                                $("#report_details_big").hide() #'fast')
                         )
 
 
