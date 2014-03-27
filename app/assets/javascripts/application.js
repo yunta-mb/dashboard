@@ -12,8 +12,8 @@
 //
 //= require jquery
 //= require jquery_ujs
-//= require underscore-min
-//= require backbone-min
+//= require underscore
+//= require backbone
 //= require backbone.marionette
 //= require colorbrewer
 //= require d3
