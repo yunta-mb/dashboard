@@ -6,7 +6,7 @@ Dashboard::Application.routes.draw do
 
 	root 'application#index'
 
-	get 'a/*jspath' => 'application#index', format: false
+	get 'a(/*jspath)' => 'application#index', format: false
 
 	resources :reports, only: [:create] do
 		resources :versions, only: [:show, :create], controller: "report_versions"
