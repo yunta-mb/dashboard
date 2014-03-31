@@ -87,7 +87,7 @@ class ReportListView extends Backbone.Marionette.CompositeView
                 $(".report_"+window.API.current_state.report+"_title").addClass("focused_report")
 
                 @children.each (report_title) ->
-                        report_title.ui.link.attr("href",window.API.compose(report: report_title.model.id, date: null)) if report_title.ui?
+                        report_title.ui.link.attr("href",window.API.compose(report: report_title.model.id, date: null, version: null)) if report_title.ui?
 
         onShow: () ->
                 @updateView()
@@ -122,6 +122,7 @@ RemoteObjectMixin = {
 
                 @full_feed = window.faye.subscribe("/client/"+window.client_id+path, (message) =>
 #                        console.log("full data", @, this)
+                        console.log("full data", message.timestamp, message.version)
                         return if @current_version and message.version <= @current_version
                         @state_set(message.state)
                         @current_version = message.version
@@ -220,7 +221,7 @@ class ReportController extends Marionette.Controller
                 $(window).resize(@resize)
 
         navigate: (old_state,new_state,changed) ->
-                if _.intersection(changed, ["report","date"]).length > 0
+                if _.intersection(changed, ["report","date","version"]).length > 0
                         if @report?
                                 @stopListening(@report)
                                 @report.die_mf_die()
@@ -230,6 +231,8 @@ class ReportController extends Marionette.Controller
                                 path = "/report/"+new_state.report
                                 if new_state.date? and new_state.date
                                         path += "/date/"+new_state.date
+                                if new_state.version? and new_state.version
+                                        path += "/version/"+new_state.version
                                 @report = new RemoteModel
                                 @report.listen(path)
                                 @reportView = new ReportView(model: @report)
@@ -240,6 +243,9 @@ class ReportController extends Marionette.Controller
 
         resize: () =>
                 @reportView.updateView() if @reportView?
+
+        current_is_live: () ->
+                (not (window.API.current_state.date? and window.API.current_state.date)) and (not (window.API.current_state.version? and window.API.current_state.version))
 
 
 class ListFolderController extends Marionette.Controller
@@ -322,7 +328,7 @@ class TimelineController extends Marionette.Controller
                         .attr("r","5px")
                         .attr("cx",(if @date then @scale(@date) else -100))
                         .attr("cy","6px")
-                        .classed("live", not (@api.current_state.date? and @api.current_state.date))
+                        .classed("live", window.reportController.current_is_live())
 
                 input_overlay = d3.select("#report_details_big svg .input_overlay")
                         .attr("x","0")
@@ -334,9 +340,9 @@ class TimelineController extends Marionette.Controller
                                 window.timelineController.timeline_repainting = true
                                 x = d3.mouse(this)[0]
                                 if x > $("#report_details_big").width() - 30
-                                        window.API.navigate(date: null)
+                                        window.API.navigate(date: null, version: null)
                                 else
-                                        window.API.navigate(date: window.timelineController.scale.invert(x).getTime()))
+                                        window.API.navigate(date: window.timelineController.scale.invert(x).getTime(), version: null))
 
 
                 if @api.current_state.date
@@ -356,6 +362,34 @@ class TimelineController extends Marionette.Controller
                         )
 
 
+class KeyboardController extends Marionette.Controller
+
+        initialize: (options) ->
+                @api = options.api
+                $(document).on("keyup", (e) ->
+                        delta = switch e.key
+                                when "Left" then -1
+                                when "Right" then 1
+                                when "Up" then 1
+                                when "Down" then -1
+                                else 0
+                        return if delta == 0
+                        return if not window.reportController.report?
+                        switch e.key
+                                when "Up", "Down"
+                                        current_version = parseInt(window.API.current_state.version or window.reportController.report.current_version)
+                                        return if not current_version
+                                        new_version = current_version + delta
+                                        return if new_version < 1 or (window.reportController.current_is_live() and delta > 0)
+                                        window.API.navigate(date: null, version: new_version)
+                                when "Left", "Right"
+                                        current_timestamp = if window.API.current_state.date? and window.API.current_state.date
+                                                new Date(parseInt(window.API.current_state.date))
+                                        else
+                                                new Date(window.reportController.report.current_timestamp)
+                                        new_timestamp = new Date(current_timestamp.getTime() + delta * 24*3600*1000)
+                                        window.API.navigate(date: new_timestamp.getTime(), version: null)
+                        )
 
 
 #----------------------------------- router
@@ -376,7 +410,8 @@ class API
                 unfolded_groups: []
                 list_hidden: false
                 demo: false
-                date: undefined }
+                date: undefined
+                version: undefined }
 
 
         constructor: () ->
@@ -396,6 +431,8 @@ class API
                         ret += "/demo/"+data.demo
                 if data.date? and data.date
                         ret += "/date/"+data.date
+                if data.version? and data.version
+                        ret += "/version/"+data.version
                 if /[^\/]*:\/\/[^\/\#]*\#/.test(window.location)
                         ret.replace(/^\//,"#")
                 ret
@@ -408,7 +445,8 @@ class API
                         unfolded_groups: []
                         list_hidden: false
                         demo: false
-                        date: null }
+                        date: null
+                        version: null }
                 i = 0
                 while i+1 < split.length
                         key = split[i]
@@ -419,6 +457,7 @@ class API
                                 when "list" then new_state.list_hidden = (value == "hide")
                                 when "demo" then new_state.demo = value
                                 when "date" then new_state.date = value
+                                when "version" then new_state.version = value
                                 else
                                         console.log("stupid key in route: ",key)
                         i += 2
@@ -496,6 +535,7 @@ $(document).ready( () ->
         window.listFolderController = new ListFolderController(api: window.API)
         window.demoController = new DemoController(api: window.API)
         window.timelineController = new TimelineController(api: window.API)
+        window.keyboardController = new KeyboardController(api: window.API)
 
         application.start({})
 

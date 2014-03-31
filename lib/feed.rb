@@ -43,6 +43,8 @@ EM.run {
 				report = Report.find(requesting[1])
 				report_version = if requesting[2] == "date" and requesting[3].to_i != 0
 					                 report.version_at(Time.at(requesting[3].to_f/1000))
+				                 elsif requesting[2] == "version" and requesting[3].to_i != 0
+					                 report.report_versions.where(version: requesting[3].to_i).first
 				                 else
 					                 report.latest_version
 				                 end
