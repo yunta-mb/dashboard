@@ -240,6 +240,9 @@ class ReportController extends Marionette.Controller
                                 @listenTo(@report, "updated", @reportView.updateView)
                         else
                                 application.report_region.close()
+                else
+                        if _.intersection(changed, ["view"]).length > 0
+                                @reportView.updateView()
 
         resize: () =>
                 @reportView.updateView() if @reportView?
