@@ -87,7 +87,7 @@ class ReportListView extends Backbone.Marionette.CompositeView
                 $(".report_"+window.API.current_state.report+"_title").addClass("focused_report")
 
                 @children.each (report_title) ->
-                        report_title.ui.link.attr("href",window.API.compose(report: report_title.model.id, date: null, version: null)) if report_title.ui?
+                        report_title.ui.link.attr("href",window.API.compose(report: report_title.model.id, date: null, version: null, view: null)) if report_title.ui?
 
         onShow: () ->
                 @updateView()
@@ -278,7 +278,7 @@ class DemoController extends Marionette.Controller
 #                console.log("switching report",window.listController.reports)
                 current_index = window.listController.reports.models.indexOf(window.listController.reports.get(@api.current_state.report or 1))
                 new_index = (current_index + 1) % window.listController.reports.models.length
-                @api.navigate(report: window.listController.reports.models[new_index].id.toString())
+                @api.navigate(report: window.listController.reports.models[new_index].id.toString(), view: null)
 
         navigate: (old_state,new_state,changed) ->
                 if _.intersection(changed, ["demo"]).length > 0
@@ -411,7 +411,8 @@ class API
                 list_hidden: false
                 demo: false
                 date: undefined
-                version: undefined }
+                version: undefined
+                view: undefined }
 
 
         constructor: () ->
@@ -433,6 +434,8 @@ class API
                         ret += "/date/"+data.date
                 if data.version? and data.version
                         ret += "/version/"+data.version
+                if data.view? and data.view
+                        ret += "/view/"+data.view
                 if /[^\/]*:\/\/[^\/\#]*\#/.test(window.location)
                         ret.replace(/^\//,"#")
                 ret
@@ -446,7 +449,8 @@ class API
                         list_hidden: false
                         demo: false
                         date: null
-                        version: null }
+                        version: null
+                        view: null }
                 i = 0
                 while i+1 < split.length
                         key = split[i]
@@ -458,6 +462,7 @@ class API
                                 when "demo" then new_state.demo = value
                                 when "date" then new_state.date = value
                                 when "version" then new_state.version = value
+                                when "view" then new_state.view = value
                                 else
                                         console.log("stupid key in route: ",key)
                         i += 2
