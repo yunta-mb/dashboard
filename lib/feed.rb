@@ -39,7 +39,7 @@ EM.run {
 				faye.publish(response_channel, { state: reports, version: reports_version })
 			}
 		when "report"
-			benchmark("publishing report for client %s"%[message["client"]]) {
+			benchmark("publishing report %i for client %s"%[requesting[1],message["client"]]) {
 				report = Report.find(requesting[1])
 				report_version = if requesting[2] == "date" and requesting[3].to_i != 0
 					                 report.version_at(Time.at(requesting[3].to_f/1000))
@@ -48,7 +48,11 @@ EM.run {
 				                 else
 					                 report.latest_version
 				                 end
-				faye.publish(response_channel, { state: { data: report_version.data, projector: report_version.projector}, version: report_version.version, timestamp: report_version.updated_at  }) if report_version
+				if report_version
+					faye.publish(response_channel, { state: { data: report_version.data, projector: report_version.projector}, version: report_version.version, timestamp: report_version.updated_at  })
+				else
+					faye.publish(response_channel, { state: { data: "", projector: ""}, version: -1, timestamp: "" })
+				end
 			}
 		end
 	}
