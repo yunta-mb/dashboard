@@ -13,7 +13,7 @@ end
 
 
 def reports
-	Report.all.order("priority NULLS LAST, name").map { |report|
+	Report.visible.order("priority NULLS LAST, name").map { |report|
 		{ id: report.id, name: report.name }
 	}
 end
@@ -72,7 +72,7 @@ EM.run {
 				report_version.save
 			}
 		}
-		if (latest_reports_change = Report.all.map { |report| [report.created_at,report.updated_at].max }.max.to_i) > latest_reports_change_uploaded
+		if (latest_reports_change = Report.visible.map { |report| [report.created_at,report.updated_at].max }.max.to_i) > latest_reports_change_uploaded
 			latest_reports_change_uploaded = latest_reports_change
 			reports_version += 1
 			benchmark("publishing reports list %i"%[reports_version]) {

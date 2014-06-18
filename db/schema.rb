@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140328115901) do
+ActiveRecord::Schema.define(version: 20140618080223) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -46,6 +46,7 @@ ActiveRecord::Schema.define(version: 20140328115901) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.float    "priority"
+    t.boolean  "hidden",          default: false
   end
 
   add_index "reports", ["report_group_id"], name: "index_reports_on_report_group_id", using: :btree
