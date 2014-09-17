@@ -40,11 +40,10 @@ EM.run {
 			}
 		when "report"
 			benchmark("publishing report %i for client %s"%[requesting[1],message["client"]]) {
-				
-                begin
-				    report = Report.find(requesting[1])
+				begin
+					report = Report.find(requesting[1])
 				rescue ActiveRecord::RecordNotFound
-                    report = Report.first
+					report = Report.first
 				end
 				
 				report_version = if requesting[2] == "date" and requesting[3].to_i != 0
