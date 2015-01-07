@@ -24,10 +24,23 @@ end
 latest_reports_change_uploaded = 0
 reports_version = Time.new.to_i
 
-
+subscriptions = {}
 
 EM.run {
 	faye = Faye::Client.new(SERVER_URL)
+
+	faye.subscribe("/events/subscriptions") { |message|
+		if message["subscriptions"]
+			subscriptions = message["subscriptions"] 
+		else
+			if message["event"] == "subscribe"
+				(subscriptions[message["channel"]] ||= []) << message["client_id"]
+			elsif message["event"] == "unsubscribe"
+				subscriptions[message["channel"]].delete(message["client_id"])
+				subscriptions.delete(message["channel"]) if subscriptions[message["channel"]].size == 0
+			end
+		end
+	}
 
 	faye.subscribe("/requests") { |message|
 		#p "got reports req", message, "/client/"+message["client"]+"/reports"
@@ -64,7 +77,8 @@ EM.run {
 
 
 	broadcast_changes = proc {
-		ReportVersion.where(reported: false).group_by { |rv| rv.report_id }.each_pair { |report_id, report_versions|
+		reports_with_active_subscriptions = subscriptions.keys.select { |key| key =~ /^\/report\/(\d+)$/ }.map { |key| key.split("/")[2].to_i }
+		ReportVersion.where(reported: false, report_id: reports_with_active_subscriptions).group_by { |rv| rv.report_id }.each_pair { |report_id, report_versions|
 			versions = report_versions.sort_by { |v| v.version }
 			latest_full_update = versions.size - (versions.reverse.index { |v| true } or (versions.size-1)) - 1
 			versions_to_send = versions[latest_full_update .. -1]
