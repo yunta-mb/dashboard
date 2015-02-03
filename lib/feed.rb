@@ -29,17 +29,12 @@ subscriptions = {}
 EM.run {
 	faye = Faye::Client.new(SERVER_URL)
 
-	faye.subscribe("/events/subscriptions") { |message|
-		if message["subscriptions"]
-			subscriptions = message["subscriptions"] 
-		else
-			if message["event"] == "subscribe"
-				(subscriptions[message["channel"]] ||= []) << message["client_id"]
-			elsif message["event"] == "unsubscribe"
-				subscriptions[message["channel"]].delete(message["client_id"])
-				subscriptions.delete(message["channel"]) if subscriptions[message["channel"]].size == 0
-			end
-		end
+	faye.subscribe("/subscriptions/continue") { |message|
+		(subscriptions[message["path"]] ||= {})[message["client"]] = Time.new
+	}
+
+	faye.subscribe("/subscriptions/discontinue") { |message|
+		(subscriptions[message["path"]] ||= {}).delete(message["client"])
 	}
 
 	faye.subscribe("/requests") { |message|
@@ -122,6 +117,15 @@ EM.run {
 
 	EM.add_periodic_timer(1) {
 		faye.publish("/ping",".")
+	}
+
+	EM.add_periodic_timer(1) {
+		subscriptions.each_pair { |path, clients|
+			clients.each_pair { |client, last_keep_alive_timestamp|
+				subscriptions[path].delete(client) if last_keep_alive_timestamp < Time.now - 25
+			}
+			subscriptions.delete(path) if subscriptions[path].size == 0
+		}
 	}
 }
 

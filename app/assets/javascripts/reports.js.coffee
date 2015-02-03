@@ -111,7 +111,7 @@ class SpinnerView extends Backbone.Marionette.ItemView
 
 RemoteObjectMixin = {
 
-        listen: (path) ->
+        subscribe: (path) ->
                 @faye_path = path
                 @current_version = null
                 @last_full_request_timestamp = null
@@ -119,6 +119,8 @@ RemoteObjectMixin = {
                 @current_timestamp = null
 
                 console.log("Listening for list updates: ",@faye_path+"/client/"+window.client_id)
+
+                window.faye.publish("/subscriptions/continue", client: window.client_id, path: @faye_path)
 
                 @full_feed = window.faye.subscribe("/client/"+window.client_id+path, (message) =>
 #                        console.log("full data", @, this)
@@ -135,7 +137,8 @@ RemoteObjectMixin = {
                         @apply_updates()
                         )
 
-                @refetch_timer = window.setInterval((() =>
+                @maintenance_timer = window.setInterval((() =>
+                        window.faye.publish("/subscriptions/continue", client: window.client_id, path: @faye_path)
                         if (! @current_version) and ( (! @last_full_request_timestamp) or ((new Date().getTime()) - @last_full_request_timestamp > 10000))
                                 console.log("didn't get full data in 10s, re-asking")
                                 @request_full()
@@ -147,7 +150,7 @@ RemoteObjectMixin = {
         request_full: () ->
                 @current_version = null
                 @last_full_request_timestamp = new Date().getTime()
-                window.faye.publish("/requests", { client: window.client_id, requesting: @faye_path  })
+                window.faye.publish("/requests", client: window.client_id, requesting: @faye_path)
 
         apply_updates: () ->
                 return if ! @current_version
@@ -168,10 +171,13 @@ RemoteObjectMixin = {
                                 @request_full()
                 @trigger("updated")
 
-        die_mf_die: () ->
-                @full_feed.cancel()
-                @incremental_feed.cancel()
-                window.clearInterval(@refetch_timer)
+        unsubscribe: () ->
+                if @faye_path
+                        @full_feed.cancel()
+                        @incremental_feed.cancel()
+                        window.clearInterval(@maintenance_timer)
+                        window.faye.publish("/subscriptions/discontinue", client: window.client_id, path: @faye_path)
+                        @faye_path = null
 
         }
 
@@ -203,7 +209,7 @@ class ListController extends Marionette.Controller
                 @api = options.api
                 @listenTo(@api, "navigate", @navigate)
                 @reports = new RemoteCollection
-                @reports.listen("/reports")
+                @reports.subscribe("/reports")
                 @reportListView = new ReportListView
                 @reportListView.collection = @reports
                 application.list_region.show(@reportListView)
@@ -224,7 +230,7 @@ class ReportController extends Marionette.Controller
                 if _.intersection(changed, ["report","date","version"]).length > 0
                         if @report?
                                 @stopListening(@report)
-                                @report.die_mf_die()
+                                @report.unsubscribe()
                                 @reportView.close() if @reportView?
                         if new_state.report and new_state.report.length > 0
                                 $(".report_row").removeClass("focused_report")
@@ -234,7 +240,7 @@ class ReportController extends Marionette.Controller
                                 if new_state.version? and new_state.version
                                         path += "/version/"+new_state.version
                                 @report = new RemoteModel
-                                @report.listen(path)
+                                @report.subscribe(path)
                                 @reportView = new ReportView(model: @report)
                                 application.report_region.show(@reportView)
                                 @listenTo(@report, "updated", @reportView.updateView)
