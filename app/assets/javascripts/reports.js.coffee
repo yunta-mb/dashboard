@@ -557,8 +557,9 @@ $(document).ready( () ->
 
 
         $(document).on('click', 'a', (event) ->
-                event.preventDefault()
-                Backbone.history.navigate(event.currentTarget.pathname, trigger: true))
+                if not event.currentTarget.pathname.substr(0,4) == "http"
+                        event.preventDefault()
+                        Backbone.history.navigate(event.currentTarget.pathname, trigger: true))
 
         $(".toggle_visibility").live("click", () ->
                 window.toggle_visibility("#"+this.id+"_to_hide", "#"+this.id+"_to_show"))
